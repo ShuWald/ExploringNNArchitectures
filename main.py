@@ -22,5 +22,5 @@ if __name__ == "__main__":
     print("\nTesting backward propagation:")
     grad_output = np.array([[1.0], [1.0]])
     nn.backward(grad_output, learning_rate=0.01)
-    '''
+    ''' 
     write_debug_to_file(nn.get_debug_json(), "simplenn_debug.txt")

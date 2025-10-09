@@ -6,6 +6,10 @@ from nnLayer import nnLayer
 import json
 
 class SimpleNeuralNetwork:
+    '''
+    layer_sizes: List of integers representing the number of neurons in each layer.
+    activations: List of strings representing the activation functions for each layer 
+    '''
     def __init__(self, layer_sizes, activations):
         assert len(layer_sizes) - 1 == len(activations), "Number of activations must be one less than number of layers."
         self.layers = []

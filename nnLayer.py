@@ -8,18 +8,21 @@ class nnLayer:
         self.last_z = None
         self.last_activation = None
         self.last_input = None
+
+        #Will explore different weights/biases initialization techniques later
         self.weights = self.initialize_weights()
         self.biases = self.initialize_biases()  
-    
+
     def initialize_weights(self):
         return np.random.randn(self.input_size, self.output_size) * 0.01
-
     def initialize_biases(self):
         return np.zeros((1, self.output_size))
 
+
     def forward(self, inputs, debug=None, layer_idx=None):
-        self.last_input = inputs
         z = np.dot(inputs, self.weights) + self.biases
+        #Remember latest variables
+        self.last_input = inputs
         self.last_z = z
         self.last_activation = self.activation_function(z)
         if debug is not None:
@@ -33,6 +36,7 @@ class nnLayer:
             })
         return self.last_activation
 
+    #Currrently only giving choices between some common activation functions
     def activation_function(self, x):
         if self.activation_name == 'relu':
             return np.maximum(0, x)
@@ -80,14 +84,5 @@ class nnLayer:
         
         #self.weights -= learning_rate * grad_weights
         #self.biases -= learning_rate * grad_biases
-        
-        if debug is not None:
-            debug.append({
-                'layer': layer_idx,
-                'weights_after_update': self.weights.tolist(),
-                'biases_after_update': self.biases.tolist(),
-                'learning_rate': learning_rate,
-                'message': f'Layer {layer_idx} backward pass - parameters updated'
-            })
         
         return grad_input
