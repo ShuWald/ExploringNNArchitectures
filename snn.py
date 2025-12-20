@@ -29,6 +29,16 @@ class SimpleNeuralNetwork:
         return x
 
         # Backward propagation
+    def backward(self, loss_grad, learning_rate):
+        self.debug.append({
+            'loss_gradient': loss_grad.tolist(), 
+            'learning_rate': learning_rate,
+            'message': 'Starting backward propagation with loss gradient ' + str(loss_grad.tolist()) 'and learning rate ' + str(learning_rate)
+            })
+        for idx in reversed(range(len(self.layers))):
+            loss_grad = self.layers[idx].backward(loss_grad, learning_rate, debug=self.debug, layer_idx=idx)
+        self.debug.append({'message': 'Completed SNN backward propagation'})
+
 
     def get_debug_json(self):
         return json.dumps(self.debug, indent=2)
