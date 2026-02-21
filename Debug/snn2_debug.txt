@@ -1,0 +1,24 @@
+[
+  {
+    "weights_shape": [
+      2,
+      3
+    ],
+    "weights_mean": -0.899686,
+    "weights_std": 0.550712,
+    "biases_mean": 0.229823,
+    "activation_mean": 0.103643,
+    "activation_std": 0.173365
+  },
+  {
+    "weights_shape": [
+      3,
+      1
+    ],
+    "weights_mean": -0.642687,
+    "weights_std": 0.651049,
+    "biases_mean": 0.897693,
+    "activation_mean": 0.495233,
+    "activation_std": 0.207565
+  }
+]

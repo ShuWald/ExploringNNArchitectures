@@ -14,29 +14,37 @@ class nnLayer:
         self.biases = self.initialize_biases()  
 
     def initialize_weights(self):
-        return np.random.randn(self.input_size, self.output_size) * 0.01
+        # He initialization for relu, Xavier for sigmoid/tanh
+        # Scales weights so activation variance stays ~1 across layers regardless of fan_in
+        if self.activation_name == 'relu':
+            # ReLU kills ~half the signal, so scale up by sqrt(2) to compensate
+            return np.random.randn(self.input_size, self.output_size) * np.sqrt(2.0 / self.input_size)
+        else:
+            # sigmoid/tanh: no signal killed, scale by sqrt(1/fan_in)
+            return np.random.randn(self.input_size, self.output_size) * np.sqrt(1.0 / self.input_size)
     def initialize_biases(self):
         return np.zeros((1, self.output_size))
 
-
-    def forward(self, inputs, debug=None, layer_idx=None):
+    def forward(self, inputs, layer_idx=None):
         z = np.dot(inputs, self.weights) + self.biases
-        #Remember latest variables
+        #Remember this layer's latest variables(for backpropagation)
         self.last_input = inputs
         self.last_z = z
-        self.last_activation = self.activation_function(z)
-        if debug is not None:
-            debug.append({
-                'layer': layer_idx,
-                'weights': self.weights.tolist(),
-                'biases': self.biases.tolist(),
-                'z': z.tolist(),
-                'activation_output': self.last_activation.tolist(),
-                'message': f'Layer {layer_idx} forward pass'
-            })
+        self.last_activation = self.activation_function(z)           
         return self.last_activation
+    
+    def details(self, debug):
+        # Log scalar summaries only — avoids dumping full matrices every epoch
+        debug.append({
+            'weights_shape': list(self.weights.shape),
+            'weights_mean': round(float(np.mean(self.weights)), 6),
+            'weights_std': round(float(np.std(self.weights)), 6),
+            'biases_mean': round(float(np.mean(self.biases)), 6),
+            'activation_mean': round(float(np.mean(self.last_activation)), 6),
+            'activation_std': round(float(np.std(self.last_activation)), 6),
+        })
 
-    #Currrently only giving choices between some common activation functions
+    #Some common activation functions
     def activation_function(self, x):
         if self.activation_name == 'relu':
             return np.maximum(0, x)
@@ -44,9 +52,12 @@ class nnLayer:
             return 1 / (1 + np.exp(-x))
         elif self.activation_name == 'tanh':
             return np.tanh(x)
+        elif self.activation_name == 'linear':
+            return x  # No transformation — used for regression output layers
         else:
             raise ValueError("Unsupported activation function")
-        
+
+    #Takes the derivative of the activation function    
     def derivative_activation_function(self, x=None):
         if self.activation_name == 'relu':
             z = self.last_z if x is None else x
@@ -57,32 +68,34 @@ class nnLayer:
         elif self.activation_name == 'tanh':
             act = self.last_activation if x is None else self.activation_function(x)
             return 1 - act**2
+        elif self.activation_name == 'linear':
+            return np.ones_like(self.last_z if x is None else x)  # Derivative is 1 everywhere
         else:
             raise ValueError("Unsupported activation function")
     
     def backward(self, grad_output, learning_rate=0.01, debug=None, layer_idx=None):
-        #batch_size = self.last_input.shape[0]
+        batch_size = self.last_input.shape[0]
+        grad_z = grad_output * self.derivative_activation_function()
         
-        #grad_z = grad_output * self.derivative_activation_function()
+        # [input_size x batch_size] @ [batch_size x output_size] = [input_size x output_size]
+        grad_weights = np.dot(self.last_input.T, grad_z) / batch_size
+        # [batch_size x output_size] -> mean along batch_size axis -> [1 x output_size]
+        grad_biases = np.mean(grad_z, axis=0, keepdims=True)
+        # [batch_size x output_size] @ [input_size x output_size].Transpose = [batch_size x input_size]
+        grad_input = np.dot(grad_z, self.weights.T)
         
-        #grad_weights = np.dot(self.last_input.T, grad_z) / batch_size
-        #grad_biases = np.mean(grad_z, axis=0, keepdims=True)
-        #grad_input = np.dot(grad_z, self.weights.T)
-        
-        if debug is not None:
-            debug.append({
-                'layer': layer_idx,
-                'grad_output': grad_output.tolist(),
-                'grad_z': grad_z.tolist(),
-                'grad_weights': grad_weights.tolist(),
-                'grad_biases': grad_biases.tolist(),
-                'grad_input': grad_input.tolist(),
-                'weights_before_update': self.weights.tolist(),
-                'biases_before_update': self.biases.tolist(),
-                'message': f'Layer {layer_idx} backward pass - gradients computed'
-            })
-        
-        #self.weights -= learning_rate * grad_weights
-        #self.biases -= learning_rate * grad_biases
+        self.weights -= learning_rate * grad_weights
+        self.biases -= learning_rate * grad_biases
+
+        # Single compact entry: scalar summaries only
+        debug.append({
+            'layer': layer_idx,
+            'grad_output_norm': round(float(np.linalg.norm(grad_output)), 6),
+            'grad_z_norm': round(float(np.linalg.norm(grad_z)), 6),
+            'grad_weights_norm': round(float(np.linalg.norm(grad_weights)), 6),
+            'grad_biases_mean': round(float(np.mean(grad_biases)), 6),
+            'weights_mean': round(float(np.mean(self.weights)), 6),
+            'weights_std': round(float(np.std(self.weights)), 6),
+        })
         
         return grad_input

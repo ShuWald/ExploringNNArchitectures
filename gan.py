@@ -29,7 +29,7 @@ class GenerativeAdverserialNetworks:
         # TODO: Discriminator takes real/fake data and outputs probability
         self.discriminator = []
         
-        self.debug.append({
+        self..append({
             'message': 'GAN initialized',
             'latent_dim': latent_dim,
             'generator_layers': generator_layers,
@@ -66,12 +66,6 @@ class GenerativeAdverserialNetworks:
         # TODO: Apply appropriate activations (ReLU, LeakyReLU, Tanh)
         # TODO: Final layer should match data_shape
         # TODO: Store intermediate values for backward pass
-        
-        self.debug.append({
-            'generator_input_shape': noise.shape,
-            'message': 'Generator forward pass'
-        })
-        
         # TODO: Return generated fake samples
         pass
     
@@ -153,12 +147,6 @@ class GenerativeAdverserialNetworks:
         # TODO: Compute discriminator loss
         # TODO: Backward pass and update discriminator parameters
         # TODO: Do NOT update generator parameters here
-        
-        self.debug.append({
-            'batch_size': batch_size,
-            'message': 'Discriminator training step'
-        })
-        
         # TODO: Return discriminator loss
         pass
     

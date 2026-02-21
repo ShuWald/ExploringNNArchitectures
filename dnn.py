@@ -1,28 +1,52 @@
 # Blueprint for a Deep Feedforward Neural Network (DNN)
 
 # 1. Import necessary libraries (numpy for computation, optional: torch/tensorflow for larger projects)
+import json
 import numpy as np
+from nnLayer import nnLayer
 
 # 2. Define a DNN class
 #    - Constructor should accept:
 #        - layer_sizes: list of integers specifying the number of neurons in each layer
 #        - activations: list of activation function names per layer
-#        - optional: dropout rates, batch normalization flags, weight initialization methods
 #    - Initialize weights and biases for each layer
 #    - Store activation functions for each layer
-class DNN:
+class DeepNeuralNetwork:
+    def __init__(self, layer_sizes, activations):
+        assert len(layer_sizes) - 1 == len(activations), "Number of activations must be one less than number of layers."
+        self.layers = []
+        self.debug = []
+        for i in range(len(layer_sizes) - 1):
+            self.debug.append({
+                'layer': i,
+                'message': f'Initializing layer {i}: {layer_sizes[i]} -> {layer_sizes[i+1]} neurons, activation: {activations[i]}'
+            })
+            self.layers.append(nnLayer(layer_sizes[i], layer_sizes[i+1], activations[i]))
 
 # 3. Implement the forward pass
 #    - Accepts input data
 #    - Iteratively computes activations for each layer
 #    - Optionally applies dropout and batch normalization
 #    - Returns final output and optionally intermediate activations for debugging
+    def forward(self, x):
+        for idx, layer in enumerate(self.layers):
+            x = layer.forward(x, layer_idx=idx)
+            layer.details(self.debug)
+        return x
 
 # 4. Implement the backward pass (backpropagation)
 #    - Accepts loss gradient with respect to output
 #    - Computes gradients for all weights and biases
 #    - Optionally supports different optimizers (SGD, Adam, etc.)
 #    - Updates parameters
+    def backward(self, loss_grad, learning_rate):
+        self.debug.append({
+            'loss_grad_norm': round(float(np.linalg.norm(loss_grad)), 6),
+            'learning_rate': learning_rate,
+        })
+        for idx, layer in enumerate(reversed(self.layers)):
+            loss_grad = layer.backward(loss_grad, learning_rate, debug=self.debug, layer_idx=idx)
+        return loss_grad
 
 # 5. Add training loop method
 #    - Accepts training data, labels, epochs, batch size, learning rate
@@ -37,6 +61,8 @@ class DNN:
 #    - Save/load model parameters
 #    - Print model summary (layer sizes, activations, parameter count)
 #    - Debugging hooks (e.g., to log activations, gradients)
+    def get_debug_json(self):
+        return json.dumps(self.debug, indent=2)
 
 # 8. (Optional) Support for advanced features
 #    - Residual connections

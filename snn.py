@@ -22,22 +22,18 @@ class SimpleNeuralNetwork:
             self.layers.append(nnLayer(layer_sizes[i], layer_sizes[i+1], activations[i]))
 
     def forward(self, x):
-        self.debug.append({'input': x.tolist(), 'message': 'Input to network'})
         for idx, layer in enumerate(self.layers):
-            x = layer.forward(x, debug=self.debug, layer_idx=idx)
-        self.debug.append({'final_output': x.tolist(), 'message': 'Final output'})
+            x = layer.forward(x, layer_idx=idx)
+            layer.details(self.debug)
         return x
 
-        # Backward propagation
     def backward(self, loss_grad, learning_rate):
         self.debug.append({
-            'loss_gradient': loss_grad.tolist(), 
+            'loss_grad_norm': round(float(np.linalg.norm(loss_grad)), 6),
             'learning_rate': learning_rate,
-            'message': 'Starting backward propagation with loss gradient ' + str(loss_grad.tolist()) 'and learning rate ' + str(learning_rate)
-            })
+        })
         for idx in reversed(range(len(self.layers))):
             loss_grad = self.layers[idx].backward(loss_grad, learning_rate, debug=self.debug, layer_idx=idx)
-        self.debug.append({'message': 'Completed SNN backward propagation'})
 
 
     def get_debug_json(self):
